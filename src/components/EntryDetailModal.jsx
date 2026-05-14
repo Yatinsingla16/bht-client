@@ -95,9 +95,9 @@ export default function EntryDetailModal({ entry, onClose, jiraLogged }) {
                 Jira Status
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px' }}>
-                <MF label="Jira Logged" value={isLogged ? 'Yes' : 'No'} highlight={isLogged} />
-                <MF label="Logged By"   value={entry.jira_logged_by || '—'} />
-                <MF label="Logged At"   value={formatDateTime(entry.jira_logged_at)} span />
+                <MF label="Jira Logged"    value={isLogged ? 'Yes' : 'No'} highlight={isLogged} span />
+                <MF label="Jira Logged At" value={formatDateTime(entry.jira_logged_at)} span />
+                <MF label="Jira Logged By" value={entry.jira_logged_by || '—'} />
               </div>
             </div>
           </div>
