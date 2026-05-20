@@ -165,7 +165,7 @@ export default function JiraTicketsAdmin() {
       a.download = 'jira_tickets_template.csv';
       a.click();
       URL.revokeObjectURL(url);
-    } catch { /* silent */ }
+    } catch { showToast('Failed to download template'); }
   }
 
   // ── Filtered tickets ──
