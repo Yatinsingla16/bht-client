@@ -149,7 +149,7 @@ export default function WeeklyReport() {
                   </div>
                 </div>
                 <div style={{ fontSize: 10, color: '#8aa5bc', fontStyle: 'italic' }}>
-                  Click any row · check boxes to log Jira
+                  Click View to see details · check boxes to log Jira
                 </div>
               </div>
 
