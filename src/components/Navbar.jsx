@@ -76,6 +76,9 @@ export default function Navbar() {
       <div style={{ display: 'flex', background: 'var(--card)', borderBottom: '1px solid var(--border)' }}>
         <NavTab to="/" active={location.pathname === '/'}>Work Log</NavTab>
         {isAdmin && (
+          <NavTab to="/weekly-report" active={location.pathname === '/weekly-report'}>Weekly Report</NavTab>
+        )}
+        {isAdmin && (
           <NavTab to="/report" active={location.pathname === '/report'}>Monthly Report</NavTab>
         )}
       </div>

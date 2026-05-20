@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { formatDate } from './reportUtils';
 
 export default function WorkLogTable({ entries, onDelete }) {
   const { user } = useAuth();
@@ -45,7 +46,7 @@ export default function WorkLogTable({ entries, onDelete }) {
           {entries.map(e => (
             <tr key={e.id}>
               <td style={{ whiteSpace: 'nowrap', color: 'var(--muted)', fontSize: 13 }}>
-                {e.date?.slice(0, 10)}
+                {formatDate(e.date)}
               </td>
               {user.is_admin && (
                 <td>

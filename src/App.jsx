@@ -4,6 +4,7 @@ import LoginPage     from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ReportPage    from './pages/ReportPage';
 import Navbar        from './components/Navbar';
+import WeeklyReportPage from './pages/WeeklyReportPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -39,6 +40,9 @@ export default function App() {
           } />
           <Route path="/report" element={
             <AdminRoute><Layout><ReportPage /></Layout></AdminRoute>
+          } />
+          <Route path="/weekly-report" element={
+            <AdminRoute><Layout><WeeklyReportPage /></Layout></AdminRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
