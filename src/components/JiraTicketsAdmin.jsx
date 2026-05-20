@@ -143,9 +143,7 @@ export default function JiraTicketsAdmin() {
     const formData = new FormData();
     formData.append('file', csvFile);
     try {
-      const { data } = await api.post('/jira-tickets/upload-csv', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data } = await api.post('/jira-tickets/upload-csv', formData);
       setCsvResult(data);
       if (data.inserted > 0) fetchTickets();
       setCsvFile(null);
@@ -235,10 +233,10 @@ export default function JiraTicketsAdmin() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div
               style={dropZoneStyle}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
+              onDragOver={csvUploading ? undefined : handleDragOver}
+              onDragLeave={csvUploading ? undefined : handleDragLeave}
+              onDrop={csvUploading ? undefined : handleDrop}
+              onClick={() => !csvUploading && fileInputRef.current?.click()}
             >
               <input
                 ref={fileInputRef}
@@ -426,8 +424,8 @@ export default function JiraTicketsAdmin() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr>
-                    {['Ticket ID', 'Project', 'Title', 'Description', 'Linked', ''].map(h => (
-                      <th key={h} style={{ padding: '6px 10px', textAlign: 'left', fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--muted)', borderBottom: '1px solid #E0DDD4', whiteSpace: 'nowrap' }}>{h}</th>
+                    {['Ticket ID', 'Project', 'Title', 'Description', 'Linked', ''].map((h, i) => (
+                      <th key={i} style={{ padding: '6px 10px', textAlign: 'left', fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--muted)', borderBottom: '1px solid #E0DDD4', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
