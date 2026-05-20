@@ -34,7 +34,7 @@ export default function WorkLogTable({ entries, onDelete }) {
             <th>Project</th>
             <th>Ticket ID</th>
             <th>Activity</th>
-            <th>Title</th>
+            <th>What did you do?</th>
             <th style={{ textAlign: 'right' }}>Actual Hrs</th>
             {user.is_admin && <th style={{ textAlign: 'right', color: 'var(--green)' }}>Mult.</th>}
             {user.is_admin && <th style={{ textAlign: 'right', color: 'var(--green)' }}>Billable Hrs</th>}
@@ -58,11 +58,11 @@ export default function WorkLogTable({ entries, onDelete }) {
               )}
               <td>{e.project_name}</td>
               <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--amber)' }}>
-                {e.ticket_id || '—'}
+                {e.jira_ticket_code || e.ticket_id || '—'}
               </td>
               <td style={{ fontSize: 13, color: 'var(--muted)' }}>{e.activity_type || '—'}</td>
               <td style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {e.ticket_title || '—'}
+                {e.work_description || '—'}
               </td>
               <td style={{ textAlign: 'right' }}>
                 {parseFloat(e.actual_hours).toFixed(2)}

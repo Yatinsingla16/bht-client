@@ -119,7 +119,7 @@ export default function MonthlyReport() {
                   </div>
                 </div>
                 <div style={{ fontSize: 10, color: '#8aa5bc', fontStyle: 'italic' }}>
-                  Click any row to view full details
+                  Click View to see entry details
                 </div>
               </div>
 
@@ -191,18 +191,20 @@ export default function MonthlyReport() {
                                 <col style={{ width: 72 }} />
                                 <col style={{ width: 52 }} />
                                 <col style={{ width: 56 }} />
+                                <col style={{ width: 56 }} />
                                 <col style={{ width: 72 }} />
                               </colgroup>
                               <thead>
                                 <tr>
                                   <Th>Date</Th>
-                                  <Th>Ticket</Th>
-                                  <Th>Title</Th>
+                                  <Th>Jira Ticket</Th>
+                                  <Th>Jira Title</Th>
                                   <Th>Activity</Th>
                                   <Th center>Actual</Th>
                                   <Th center green>Billable</Th>
                                   <Th center green>+%</Th>
                                   <Th center>Notes</Th>
+                                  <Th></Th>
                                   <Th center>Jira</Th>
                                 </tr>
                               </thead>
@@ -210,11 +212,9 @@ export default function MonthlyReport() {
                                 {person.entries.map(e => (
                                   <tr
                                     key={e.id}
-                                    onClick={() => setSelectedEntry(e)}
                                     onMouseEnter={() => setHoveredRow(e.id)}
                                     onMouseLeave={() => setHoveredRow(null)}
                                     style={{
-                                      cursor: 'pointer',
                                       background: e.jira_logged
                                         ? '#EAF3DE'
                                         : hoveredRow === e.id ? 'var(--hover-row)' : 'transparent',
@@ -222,8 +222,8 @@ export default function MonthlyReport() {
                                     }}
                                   >
                                     <td style={tdStyle}><span style={{ fontSize: 10, color: 'var(--muted)' }}>{formatDate(e.date)}</span></td>
-                                    <td style={tdStyle}><code style={{ fontSize: 9, color: 'var(--muted)' }}>{e.ticket_id || '—'}</code></td>
-                                    <td style={{ ...tdStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.ticket_title || '—'}</td>
+                                    <td style={tdStyle}><code style={{ fontSize: 9, color: 'var(--muted)' }}>{e.jira_ticket_code || e.ticket_id || '—'}</code></td>
+                                    <td style={{ ...tdStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.jira_title || '—'}</td>
                                     <td style={{ ...tdStyle, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.activity_type || '—'}</td>
                                     <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 500 }}>{parseFloat(e.actual_hours).toFixed(2)}</td>
                                     <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 12 }}>{parseFloat(e.billable_hours).toFixed(2)}</td>
@@ -238,6 +238,14 @@ export default function MonthlyReport() {
                                         : <span style={{ color: 'var(--border)', fontSize: 10 }}>—</span>
                                       }
                                     </td>
+                                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                                      <button
+                                        onClick={() => setSelectedEntry(e)}
+                                        style={{ background: 'transparent', border: '1px solid var(--navy)', color: 'var(--navy)', fontSize: 9, padding: '2px 8px', cursor: 'pointer', borderRadius: 2, letterSpacing: 0.5, fontFamily: 'var(--font-body)' }}
+                                      >
+                                        View
+                                      </button>
+                                    </td>
                                     <td style={{ ...tdStyle, textAlign: 'center', fontSize: 14 }}>
                                       {e.jira_logged ? '✅' : '❌'}
                                     </td>
@@ -249,7 +257,7 @@ export default function MonthlyReport() {
                                   </td>
                                   <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600 }}>{personActual.toFixed(2)}</td>
                                   <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 13, fontWeight: 500 }}>{personBillable.toFixed(2)}</td>
-                                  <td style={tdStyle} /><td style={tdStyle} /><td style={tdStyle} />
+                                  <td style={tdStyle} /><td style={tdStyle} /><td style={tdStyle} /><td style={tdStyle} />
                                 </tr>
                               </tbody>
                             </table>

@@ -194,17 +194,19 @@ export default function WeeklyReport() {
                           <col style={{ width: 66 }} />
                           <col style={{ width: 72 }} />
                           <col style={{ width: 52 }} />
+                          <col style={{ width: 56 }} />
                           <col style={{ width: 86 }} />
                         </colgroup>
                         <thead>
                           <tr>
                             <Th>Date</Th>
-                            <Th>Ticket ID</Th>
-                            <Th>Title</Th>
+                            <Th>Jira Ticket</Th>
+                            <Th>Jira Title</Th>
                             <Th>Activity</Th>
                             <Th center>Actual</Th>
                             <Th center green>Billable</Th>
                             <Th center green>+%</Th>
+                            <Th></Th>
                             <Th center>Jira Logged</Th>
                           </tr>
                         </thead>
@@ -223,14 +225,22 @@ export default function WeeklyReport() {
                                   transition: 'background 0.1s',
                                 }}
                               >
-                                <td style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}><span style={{ fontSize: 10, color: 'var(--muted)' }}>{formatDate(e.date)}</span></td>
-                                <td style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}><code style={{ fontSize: 9, color: 'var(--muted)' }}>{e.ticket_id || '—'}</code></td>
-                                <td style={{ ...tdStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{e.ticket_title || '—'}</td>
-                                <td style={{ ...tdStyle, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{e.activity_type || '—'}</td>
-                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 500, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{parseFloat(e.actual_hours).toFixed(2)}</td>
-                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 12, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{parseFloat(e.billable_hours).toFixed(2)}</td>
-                                <td style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>
+                                <td style={tdStyle}><span style={{ fontSize: 10, color: 'var(--muted)' }}>{formatDate(e.date)}</span></td>
+                                <td style={tdStyle}><code style={{ fontSize: 9, color: 'var(--muted)' }}>{e.jira_ticket_code || e.ticket_id || '—'}</code></td>
+                                <td style={{ ...tdStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.jira_title || '—'}</td>
+                                <td style={{ ...tdStyle, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.activity_type || '—'}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 500 }}>{parseFloat(e.actual_hours).toFixed(2)}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 12 }}>{parseFloat(e.billable_hours).toFixed(2)}</td>
+                                <td style={tdStyle}>
                                   <span style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 9, fontWeight: 500, padding: '1px 5px', borderRadius: 8 }}>{pct(e.multiplier)}</span>
+                                </td>
+                                <td style={{ ...tdStyle, textAlign: 'center' }}>
+                                  <button
+                                    onClick={() => setSelectedEntry(e)}
+                                    style={{ background: 'transparent', border: '1px solid var(--navy)', color: 'var(--navy)', fontSize: 9, padding: '2px 8px', cursor: 'pointer', borderRadius: 2, letterSpacing: 0.5, fontFamily: 'var(--font-body)' }}
+                                  >
+                                    View
+                                  </button>
                                 </td>
                                 <td style={{ ...tdStyle, textAlign: 'center' }}>
                                   <input
@@ -250,7 +260,7 @@ export default function WeeklyReport() {
                             </td>
                             <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600 }}>{personActual.toFixed(2)}</td>
                             <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 13, fontWeight: 500 }}>{personBillable.toFixed(2)}</td>
-                            <td style={tdStyle} /><td style={tdStyle} />
+                            <td style={tdStyle} /><td style={tdStyle} /><td style={tdStyle} />
                           </tr>
                         </tbody>
                       </table>
