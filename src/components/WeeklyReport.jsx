@@ -97,6 +97,7 @@ export default function WeeklyReport() {
       await fetchReport(filters);
     } catch {
       showToast('Save failed — please try again');
+      await fetchReport(filters);
     } finally {
       setSaving(false);
     }
@@ -272,9 +273,8 @@ export default function WeeklyReport() {
                                 <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 12 }}>{parseFloat(e.billable_hours).toFixed(2)}</td>
                                 <td style={{ ...tdStyle, textAlign: 'center' }}>
                                   <input
-                                    type="number"
-                                    step={0.25}
-                                    min={0}
+                                    type="text"
+                                    inputMode="decimal"
                                     value={billedHoursState[e.id] ?? ''}
                                     placeholder="—"
                                     onChange={ev => setBilledHoursState(s => ({ ...s, [e.id]: ev.target.value }))}
