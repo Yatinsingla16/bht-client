@@ -10,8 +10,8 @@ export default function WorkLogTable({ entries, onDelete }) {
     try {
       await api.delete(`/work-entries/${id}`);
       onDelete();
-    } catch {
-      alert('Could not delete entry.');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not delete entry.');
     }
   }
 
@@ -44,7 +44,7 @@ export default function WorkLogTable({ entries, onDelete }) {
         </thead>
         <tbody>
           {entries.map(e => (
-            <tr key={e.id}>
+            <tr key={e.id} style={!user.is_admin && e.jira_logged ? { background: '#EAF3DE' } : undefined}>
               <td style={{ whiteSpace: 'nowrap', color: 'var(--muted)', fontSize: 13 }}>
                 {formatDate(e.date)}
               </td>
@@ -84,7 +84,22 @@ export default function WorkLogTable({ entries, onDelete }) {
                 {e.notes || '—'}
               </td>
               <td>
-                {(user.is_admin || e.user_id === user.id) && (
+                {user.is_admin ? (
+                  <button
+                    onClick={() => handleDelete(e.id)}
+                    title="Delete entry"
+                    style={{
+                      background: 'transparent', border: 'none',
+                      color: 'var(--muted)', fontSize: 13, cursor: 'pointer',
+                      padding: '2px 6px', lineHeight: 1,
+                    }}
+                  >✕</button>
+                ) : e.jira_logged ? (
+                  <span
+                    title="Logged in Jira — cannot be deleted"
+                    style={{ fontSize: 13, cursor: 'default', display: 'inline-block', padding: '2px 6px', opacity: 0.7 }}
+                  >🔒</span>
+                ) : (
                   <button
                     onClick={() => handleDelete(e.id)}
                     title="Delete entry"
