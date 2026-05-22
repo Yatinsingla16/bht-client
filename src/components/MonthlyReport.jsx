@@ -62,6 +62,11 @@ export default function MonthlyReport() {
   const memberCount    = new Set(entries.map(e => e.user_id)).size;
   const jiraCount      = entries.filter(e => e.jira_logged).length;
 
+  const billedEntriesAll = entries.filter(e => e.billed_hours !== null && e.billed_hours !== undefined);
+  const totalBilled = billedEntriesAll.length > 0
+    ? billedEntriesAll.reduce((s, e) => s + parseFloat(e.billed_hours), 0)
+    : null;
+
   const monthLabel      = MONTHS[filters.month - 1];
   const selectedProject = filters.project_id ? projects.find(p => p.id == filters.project_id) : null;
 
@@ -124,11 +129,19 @@ export default function MonthlyReport() {
               </div>
 
               {/* Summary cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
-                <SummaryCard type="blue" label="Total Entries"  value={entries.length}              sub={`across ${memberCount} member${memberCount !== 1 ? 's' : ''}`} />
-                <SummaryCard type="def"  label="Actual Hours"   value={totalActual.toFixed(2)}      sub="hrs logged" />
-                <SummaryCard type="grn"  label="Billable Hours" value={totalBillable.toFixed(2)}    sub="hrs to invoice" />
-                <SummaryCard type="amb"  label="Extra Hours"    value={`+${totalExtra.toFixed(2)}`} sub="multiplier gain" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
+                <SummaryCard type="blue" label="Total Entries"  value={entries.length}                                      sub={`across ${memberCount} member${memberCount !== 1 ? 's' : ''}`} />
+                <SummaryCard type="def"  label="Actual Hours"   value={totalActual.toFixed(2)}                              sub="hrs logged" />
+                <SummaryCard type="grn"  label="Billable Hours" value={totalBillable.toFixed(2)}                            sub="hrs to invoice" />
+                <SummaryCard type="amb"  label="Billed Hours"   value={totalBilled !== null ? totalBilled.toFixed(2) : '—'} sub="hrs invoiced" />
+                <SummaryCard type="amb"  label="Extra Hours"    value={`+${totalExtra.toFixed(2)}`}                         sub="multiplier gain" />
+              </div>
+
+              {/* Billed hours note */}
+              <div style={{ padding: '8px 18px', borderBottom: '1px solid var(--border)', background: '#FAEEDA' }}>
+                <span style={{ fontSize: 11, color: '#854F0B' }}>
+                  Billed hours are final agreed hours invoiced to client
+                </span>
               </div>
 
               {/* Jira count note */}
@@ -164,6 +177,10 @@ export default function MonthlyReport() {
                       {Object.entries(proj.byUser).map(([userId, person], idx) => {
                         const personActual   = person.entries.reduce((s, e) => s + parseFloat(e.actual_hours),   0);
                         const personBillable = person.entries.reduce((s, e) => s + parseFloat(e.billable_hours), 0);
+                        const billedEntries = person.entries.filter(e => e.billed_hours !== null && e.billed_hours !== undefined);
+                        const personBilled = billedEntries.length > 0
+                          ? billedEntries.reduce((s, e) => s + parseFloat(e.billed_hours), 0)
+                          : null;
                         const rc = ROLE_COLORS[person.role] || { bg: '#eee', color: '#333' };
 
                         return (
@@ -189,6 +206,7 @@ export default function MonthlyReport() {
                                 <col style={{ width: 162 }} />
                                 <col style={{ width: 66 }} />
                                 <col style={{ width: 72 }} />
+                                <col style={{ width: 80 }} />
                                 <col style={{ width: 52 }} />
                                 <col style={{ width: 56 }} />
                                 <col style={{ width: 56 }} />
@@ -202,6 +220,7 @@ export default function MonthlyReport() {
                                   <Th>Activity</Th>
                                   <Th center>Actual</Th>
                                   <Th center green>Billable</Th>
+                                  <Th center amber>Billed</Th>
                                   <Th center green>+%</Th>
                                   <Th center>Notes</Th>
                                   <Th></Th>
@@ -227,6 +246,11 @@ export default function MonthlyReport() {
                                     <td style={{ ...tdStyle, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.activity_type || '—'}</td>
                                     <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 500 }}>{parseFloat(e.actual_hours).toFixed(2)}</td>
                                     <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 12 }}>{parseFloat(e.billable_hours).toFixed(2)}</td>
+                                    <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: '#C8902A' }}>
+                                      {(e.billed_hours !== null && e.billed_hours !== undefined)
+                                        ? parseFloat(e.billed_hours).toFixed(2)
+                                        : <span style={{ color: 'var(--muted)', fontWeight: 400 }}>—</span>}
+                                    </td>
                                     <td style={tdStyle}>
                                       <span style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 9, fontWeight: 500, padding: '1px 5px', borderRadius: 8 }}>
                                         {pct(e.multiplier)}
@@ -251,12 +275,15 @@ export default function MonthlyReport() {
                                     </td>
                                   </tr>
                                 ))}
-                                <tr style={{ background: '#EAF3DE', borderTop: '1px solid #97C459' }}>
-                                  <td colSpan={4} style={{ ...tdStyle, textAlign: 'right', color: 'var(--muted)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
+                                <tr style={{ background: '#F5F2EB', borderTop: '1px solid #E0DDD4' }}>
+                                  <td colSpan={4} style={{ ...tdStyle, textAlign: 'right', color: 'var(--muted)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600 }}>
                                     {person.name} subtotal
                                   </td>
-                                  <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600 }}>{personActual.toFixed(2)}</td>
-                                  <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 13, fontWeight: 500 }}>{personBillable.toFixed(2)}</td>
+                                  <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--navy)' }}>{personActual.toFixed(2)}</td>
+                                  <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)' }}>{personBillable.toFixed(2)}</td>
+                                  <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: '#C8902A' }}>
+                                    {personBilled !== null ? personBilled.toFixed(2) : '—'}
+                                  </td>
                                   <td style={tdStyle} /><td style={tdStyle} /><td style={tdStyle} /><td style={tdStyle} />
                                 </tr>
                               </tbody>
@@ -290,12 +317,12 @@ const tdStyle = {
   verticalAlign: 'middle', color: 'var(--navy)',
 };
 
-function Th({ children, center, green }) {
+function Th({ children, center, green, amber }) {
   return (
     <th style={{
       padding: '5px 8px', textAlign: center ? 'center' : 'left',
       fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase',
-      color: green ? 'var(--green)' : 'var(--muted)',
+      color: green ? 'var(--green)' : amber ? '#C8902A' : 'var(--muted)',
       borderBottom: '0.5px solid var(--border)', whiteSpace: 'nowrap',
       background: 'var(--card)',
     }}>
