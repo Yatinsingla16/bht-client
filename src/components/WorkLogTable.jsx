@@ -18,8 +18,8 @@ export default function WorkLogTable({ entries, onDelete }) {
   if (!entries.length) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--muted)' }}>
-        <p style={{ fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>No Entries Yet</p>
-        <p style={{ fontSize: 13, marginTop: 8 }}>Use the button above to log your first work entry.</p>
+        <p style={{ fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>No Entries Found</p>
+        <p style={{ fontSize: 13, marginTop: 8 }}>No entries found for the selected date range.</p>
       </div>
     );
   }
