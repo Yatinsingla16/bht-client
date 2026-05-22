@@ -68,6 +68,11 @@ export default function EntryDetailModal({ entry, onClose, jiraLogged }) {
               <SField label="Activity"      value={entry.activity_type || '—'} />
               <SField label="Actual Hours"  value={`${parseFloat(entry.actual_hours).toFixed(2)} hrs`} />
               <SField label="Billable Hours" value={`${parseFloat(entry.billable_hours).toFixed(2)} hrs`} green />
+              <SField label="Billed Hours" value={
+                (entry.billed_hours !== null && entry.billed_hours !== undefined)
+                  ? <span style={{ fontSize: 15, color: '#C8902A', fontWeight: 600 }}>{parseFloat(entry.billed_hours).toFixed(2)} hrs</span>
+                  : <span style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>Not set yet</span>
+              } />
               <SField label="Multiplier"    value={pct(entry.multiplier)} pill />
             </div>
 
