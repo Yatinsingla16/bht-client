@@ -279,13 +279,13 @@ export default function WeeklyReport() {
                                     placeholder="—"
                                     onChange={ev => setBilledHoursState(s => ({ ...s, [e.id]: ev.target.value }))}
                                     style={{
-                                      width: 70, border: '1px solid #E0DDD4', borderRadius: 2,
-                                      background: '#FDFBF7', textAlign: 'center',
+                                      width: 70, border: '1px solid #EF9F27', borderRadius: 2,
+                                      background: '#FAEEDA', textAlign: 'center',
                                       fontFamily: 'var(--font-body)', fontSize: 11, padding: '3px 4px',
-                                      outline: 'none',
+                                      outline: 'none', color: '#633806',
                                     }}
-                                    onFocus={ev => { ev.target.style.borderColor = '#2A6B52'; }}
-                                    onBlur={ev => { ev.target.style.borderColor = '#E0DDD4'; }}
+                                    onFocus={ev => { ev.target.style.borderColor = '#C8902A'; ev.target.style.background = '#F5E4C0'; }}
+                                    onBlur={ev => { ev.target.style.borderColor = '#EF9F27'; ev.target.style.background = '#FAEEDA'; }}
                                   />
                                 </td>
                                 <td style={tdStyle}>
