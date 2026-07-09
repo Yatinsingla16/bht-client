@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import ReportPage    from './pages/ReportPage';
 import Navbar        from './components/Navbar';
 import WeeklyReportPage from './pages/WeeklyReportPage';
+import JiraTicketsPage from './pages/JiraTicketsPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -43,6 +44,9 @@ export default function App() {
           } />
           <Route path="/weekly-report" element={
             <AdminRoute><Layout><WeeklyReportPage /></Layout></AdminRoute>
+          } />
+          <Route path="/jira-tickets" element={
+            <AdminRoute><Layout><JiraTicketsPage /></Layout></AdminRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

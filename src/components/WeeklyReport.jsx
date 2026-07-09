@@ -23,6 +23,7 @@ export default function WeeklyReport() {
   const [toast, setToast]                 = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [hoveredRow, setHoveredRow]       = useState(null);
+  const [billedHoursState, setBilledHoursState] = useState({});
 
   useEffect(() => {
     api.get('/projects').then(r => setProjects(r.data)).catch(() => {});
@@ -43,6 +44,13 @@ export default function WeeklyReport() {
       const init = {};
       data.forEach(e => { init[e.id] = Boolean(e.jira_logged); });
       setJiraState(init);
+      const initBilled = {};
+      data.forEach(e => {
+        initBilled[e.id] = (e.billed_hours !== null && e.billed_hours !== undefined)
+          ? String(parseFloat(e.billed_hours))
+          : '';
+      });
+      setBilledHoursState(initBilled);
     } catch {
       setEntries([]);
       setJiraState({});
@@ -56,19 +64,40 @@ export default function WeeklyReport() {
   }
 
   async function handleSave() {
-    const changed = entries
+    const jiraChanged = entries
       .filter(e => jiraState[e.id] !== Boolean(e.jira_logged))
       .map(e => ({ id: e.id, jira_logged: jiraState[e.id] }));
 
-    if (changed.length === 0) return;
+    const billedChanged = entries
+      .filter(e => {
+        const raw = billedHoursState[e.id] ?? '';
+        const newVal = raw === '' ? null : parseFloat(raw);
+        const origVal = (e.billed_hours !== null && e.billed_hours !== undefined)
+          ? parseFloat(e.billed_hours) : null;
+        if (newVal === null && origVal === null) return false;
+        if (newVal === null || origVal === null) return true;
+        return Math.abs(newVal - origVal) > 0.001;
+      })
+      .map(e => ({
+        id: e.id,
+        billed_hours: (billedHoursState[e.id] ?? '') === '' ? null : parseFloat(billedHoursState[e.id]),
+      }));
+
+    if (jiraChanged.length === 0 && billedChanged.length === 0) return;
 
     setSaving(true);
     try {
-      await api.patch('/reports/weekly/jira-flag', { updates: changed });
-      showToast('Jira flags saved successfully');
+      const calls = [];
+      if (jiraChanged.length > 0)
+        calls.push(api.patch('/reports/weekly/jira-flag', { updates: jiraChanged }));
+      if (billedChanged.length > 0)
+        calls.push(api.patch('/reports/weekly/billed-hours', { updates: billedChanged }));
+      await Promise.all(calls);
+      showToast('Changes saved successfully');
       await fetchReport(filters);
     } catch {
       showToast('Save failed — please try again');
+      await fetchReport(filters);
     } finally {
       setSaving(false);
     }
@@ -92,6 +121,10 @@ export default function WeeklyReport() {
   const totalActual   = entries.reduce((s, e) => s + parseFloat(e.actual_hours),  0);
   const totalBillable = entries.reduce((s, e) => s + parseFloat(e.billable_hours), 0);
   const totalExtra    = totalBillable - totalActual;
+  const billedEntriesAll = entries.filter(e => e.billed_hours !== null && e.billed_hours !== undefined);
+  const totalBilled = billedEntriesAll.length > 0
+    ? billedEntriesAll.reduce((s, e) => s + parseFloat(e.billed_hours), 0)
+    : null;
 
   const selectedWeek    = WEEKS.find(w => toYMD(w.start) === filters.week_start) || WEEKS[0];
   const weekLabel       = formatWeekLabel(selectedWeek.start, selectedWeek.end);
@@ -149,16 +182,17 @@ export default function WeeklyReport() {
                   </div>
                 </div>
                 <div style={{ fontSize: 10, color: '#8aa5bc', fontStyle: 'italic' }}>
-                  Click any row · check boxes to log Jira
+                  Click View to see details · check boxes to log Jira
                 </div>
               </div>
 
               {/* Summary cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
-                <SummaryCard type="blue" label="Total Entries"  value={entries.length}              sub={`${Object.keys(grouped).length} member(s)`} />
-                <SummaryCard type="def"  label="Actual Hours"   value={totalActual.toFixed(2)}      sub="hrs logged" />
-                <SummaryCard type="grn"  label="Billable Hours" value={totalBillable.toFixed(2)}    sub="hrs to invoice" />
-                <SummaryCard type="amb"  label="Extra Hours"    value={`+${totalExtra.toFixed(2)}`} sub="multiplier gain" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
+                <SummaryCard type="blue" label="Total Entries"  value={entries.length}                                      sub={`${Object.keys(grouped).length} member(s)`} />
+                <SummaryCard type="def"  label="Actual Hours"   value={totalActual.toFixed(2)}                              sub="hrs logged" />
+                <SummaryCard type="grn"  label="Billable Hours" value={totalBillable.toFixed(2)}                            sub="hrs to invoice" />
+                <SummaryCard type="amb"  label="Billed Hours"   value={totalBilled !== null ? totalBilled.toFixed(2) : '—'} sub="hrs invoiced" />
+                <SummaryCard type="amb"  label="Extra Hours"    value={`+${totalExtra.toFixed(2)}`}                         sub="multiplier gain" />
               </div>
 
               {/* Person groups */}
@@ -166,6 +200,10 @@ export default function WeeklyReport() {
                 {Object.entries(grouped).map(([userId, person]) => {
                   const personActual   = person.entries.reduce((s, e) => s + parseFloat(e.actual_hours),   0);
                   const personBillable = person.entries.reduce((s, e) => s + parseFloat(e.billable_hours), 0);
+                  const billedEntries = person.entries.filter(e => e.billed_hours !== null && e.billed_hours !== undefined);
+                  const personBilled = billedEntries.length > 0
+                    ? billedEntries.reduce((s, e) => s + parseFloat(e.billed_hours), 0)
+                    : null;
                   const rc = ROLE_COLORS[person.role] || { bg: '#eee', color: '#333' };
 
                   return (
@@ -193,18 +231,22 @@ export default function WeeklyReport() {
                           <col style={{ width: 162 }} />
                           <col style={{ width: 66 }} />
                           <col style={{ width: 72 }} />
+                          <col style={{ width: 80 }} />
                           <col style={{ width: 52 }} />
+                          <col style={{ width: 56 }} />
                           <col style={{ width: 86 }} />
                         </colgroup>
                         <thead>
                           <tr>
                             <Th>Date</Th>
-                            <Th>Ticket ID</Th>
-                            <Th>Title</Th>
+                            <Th>Jira Ticket</Th>
+                            <Th>Jira Title</Th>
                             <Th>Activity</Th>
                             <Th center>Actual</Th>
                             <Th center green>Billable</Th>
+                            <Th center amber>Billed</Th>
                             <Th center green>+%</Th>
+                            <Th></Th>
                             <Th center>Jira Logged</Th>
                           </tr>
                         </thead>
@@ -223,14 +265,39 @@ export default function WeeklyReport() {
                                   transition: 'background 0.1s',
                                 }}
                               >
-                                <td style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}><span style={{ fontSize: 10, color: 'var(--muted)' }}>{formatDate(e.date)}</span></td>
-                                <td style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}><code style={{ fontSize: 9, color: 'var(--muted)' }}>{e.ticket_id || '—'}</code></td>
-                                <td style={{ ...tdStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{e.ticket_title || '—'}</td>
-                                <td style={{ ...tdStyle, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{e.activity_type || '—'}</td>
-                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 500, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{parseFloat(e.actual_hours).toFixed(2)}</td>
-                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 12, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>{parseFloat(e.billable_hours).toFixed(2)}</td>
-                                <td style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setSelectedEntry(e)}>
+                                <td style={tdStyle}><span style={{ fontSize: 10, color: 'var(--muted)' }}>{formatDate(e.date)}</span></td>
+                                <td style={tdStyle}><code style={{ fontSize: 9, color: 'var(--muted)' }}>{e.jira_ticket_code || e.ticket_id || '—'}</code></td>
+                                <td style={{ ...tdStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.jira_title || '—'}</td>
+                                <td style={{ ...tdStyle, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.activity_type || '—'}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 500 }}>{parseFloat(e.actual_hours).toFixed(2)}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 12 }}>{parseFloat(e.billable_hours).toFixed(2)}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center' }}>
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={billedHoursState[e.id] ?? ''}
+                                    placeholder="—"
+                                    onChange={ev => setBilledHoursState(s => ({ ...s, [e.id]: ev.target.value }))}
+                                    style={{
+                                      width: 70, border: '1px solid #EF9F27', borderRadius: 2,
+                                      background: '#FAEEDA', textAlign: 'center',
+                                      fontFamily: 'var(--font-body)', fontSize: 11, padding: '3px 4px',
+                                      outline: 'none', color: '#633806',
+                                    }}
+                                    onFocus={ev => { ev.target.style.borderColor = '#C8902A'; ev.target.style.background = '#F5E4C0'; }}
+                                    onBlur={ev => { ev.target.style.borderColor = '#EF9F27'; ev.target.style.background = '#FAEEDA'; }}
+                                  />
+                                </td>
+                                <td style={tdStyle}>
                                   <span style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 9, fontWeight: 500, padding: '1px 5px', borderRadius: 8 }}>{pct(e.multiplier)}</span>
+                                </td>
+                                <td style={{ ...tdStyle, textAlign: 'center' }}>
+                                  <button
+                                    onClick={() => setSelectedEntry(e)}
+                                    style={{ background: 'transparent', border: '1px solid var(--navy)', color: 'var(--navy)', fontSize: 9, padding: '2px 8px', cursor: 'pointer', borderRadius: 2, letterSpacing: 0.5, fontFamily: 'var(--font-body)' }}
+                                  >
+                                    View
+                                  </button>
                                 </td>
                                 <td style={{ ...tdStyle, textAlign: 'center' }}>
                                   <input
@@ -244,13 +311,16 @@ export default function WeeklyReport() {
                             );
                           })}
                           {/* Subtotal row */}
-                          <tr style={{ background: '#EAF3DE', borderTop: '1px solid #97C459' }}>
-                            <td colSpan={4} style={{ ...tdStyle, textAlign: 'right', color: 'var(--muted)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
+                          <tr style={{ background: '#F5F2EB', borderTop: '1px solid #E0DDD4' }}>
+                            <td colSpan={4} style={{ ...tdStyle, textAlign: 'right', color: 'var(--muted)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600 }}>
                               {person.name} subtotal
                             </td>
-                            <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600 }}>{personActual.toFixed(2)}</td>
-                            <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--green)', fontFamily: 'var(--font-heading)', fontSize: 13, fontWeight: 500 }}>{personBillable.toFixed(2)}</td>
-                            <td style={tdStyle} /><td style={tdStyle} />
+                            <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--navy)' }}>{personActual.toFixed(2)}</td>
+                            <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: 'var(--green)' }}>{personBillable.toFixed(2)}</td>
+                            <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600, color: '#C8902A' }}>
+                              {personBilled !== null ? personBilled.toFixed(2) : '—'}
+                            </td>
+                            <td style={tdStyle} /><td style={tdStyle} /><td style={tdStyle} />
                           </tr>
                         </tbody>
                       </table>
@@ -316,12 +386,12 @@ const tdStyle = {
   verticalAlign: 'middle', color: 'var(--navy)',
 };
 
-function Th({ children, center, green }) {
+function Th({ children, center, green, amber }) {
   return (
     <th style={{
       padding: '5px 8px', textAlign: center ? 'center' : 'left',
       fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase',
-      color: green ? 'var(--green)' : 'var(--muted)',
+      color: green ? 'var(--green)' : amber ? '#C8902A' : 'var(--muted)',
       borderBottom: '0.5px solid var(--border)', whiteSpace: 'nowrap',
       background: 'var(--card)',
     }}>
